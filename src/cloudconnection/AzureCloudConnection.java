@@ -22,11 +22,11 @@ public class AzureCloudConnection {
     public static void main(String[] args) throws Exception {
         try {
             Connection connection = createDBConnection();
-            String value = "25";
-//            insertData(connection, value);
+            String value = "on";
+           // insertData(connection, value);
 
-            deleteTable(connection, "weather");
-          //  showData(connection);
+            //deleteTable(connection, "weather");
+            showData(connection);
 //            dumpData(connection);
 //            lastInsertData(connection);
 
@@ -69,9 +69,13 @@ public class AzureCloudConnection {
     private static boolean insertData(Connection connection, String value) throws SQLException {
         Timestamp currentTimestamp = new java.sql.Timestamp(Calendar.getInstance().getTime().getTime());
         try (Statement statement = connection.createStatement()) {
-            String a = "INSERT INTO weather VALUES ('" + value + "', " + currentTimestamp + ")";
-            if (statement.executeUpdate("INSERT INTO weather (temperature, currdatetime) VALUES "
-                    + "('" + value + "', '" + currentTimestamp + "')") > 0) {
+            String a = "INSERT INTO Movement_Reg (m_status, a_status, date_time) VALUES "
+                    + "('"+ value + "','', '"+currentTimestamp+"')";
+            
+            String b = "UPDATE Movement_Reg SET m_status = 'off', date_time = '"+currentTimestamp+"' WHERE reg_id = 1";
+            
+            System.out.println(">>" + b);
+            if (statement.executeUpdate(b) > 0) {
                 statement.close();
                 return true;
             }
@@ -91,13 +95,14 @@ public class AzureCloudConnection {
     }
 
     private static void showData(Connection connection) throws SQLException {
-        String query = "SELECT * FROM weather";
+        String query = "SELECT * FROM Movement_Reg";
         try (Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(query);
             while (resultSet.next()) {
                 System.out.println("resultSet.getString(1) :" + resultSet.getString(1));
                 System.out.println("resultSet.getString(2) :" + resultSet.getString(2));
                 System.out.println("resultSet.getString(3) :" + resultSet.getString(3));
+                System.out.println("resultSet.getString(3) :" + resultSet.getString(4));
             }
             statement.close();
         }

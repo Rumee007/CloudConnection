@@ -12,6 +12,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -19,21 +21,42 @@ import java.util.Calendar;
  */
 public class AzureCloudConnection {
 
+    private static Connection connection = null;
+    private static int count = 0;
+
     public static void main(String[] args) throws Exception {
         try {
-            Connection connection = createDBConnection();
-            String value = "on";
-           // insertData(connection, value);
-
-            //deleteTable(connection, "weather");
-            showData(connection);
-//            dumpData(connection);
+            connection = createDBConnection();
+            String value = "off";
+            //insertData(connection, value);
+            //deleteTable(connection, "Movement_Reg");
+            //showData(connection, count);
+            //dumpData(connection);
 //            lastInsertData(connection);
-
-            connection.close();
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    while (!Thread.currentThread().isInterrupted()) {
+                        int countValue = count++;
+                        try {
+                            showData(connection, countValue);
+                        } catch (SQLException ex) {
+                            Logger.getLogger(AzureCloudConnection.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException ex) {
+                            Logger.getLogger(AzureCloudConnection.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            };
+            Thread thread = new Thread(runnable);
+            thread.start();
         } catch (ClassNotFoundException | SQLException ex) {
             System.out.println("ERROR :" + ex);
         }
+
     }
 
     private static Connection createDBConnection() throws SQLException, ClassNotFoundException {
@@ -69,13 +92,17 @@ public class AzureCloudConnection {
     private static boolean insertData(Connection connection, String value) throws SQLException {
         Timestamp currentTimestamp = new java.sql.Timestamp(Calendar.getInstance().getTime().getTime());
         try (Statement statement = connection.createStatement()) {
-            String a = "INSERT INTO Movement_Reg (m_status, a_status, date_time) VALUES "
-                    + "('"+ value + "','', '"+currentTimestamp+"')";
-            
-            String b = "UPDATE Movement_Reg SET m_status = 'off', date_time = '"+currentTimestamp+"' WHERE reg_id = 1";
-            
-            System.out.println(">>" + b);
-            if (statement.executeUpdate(b) > 0) {
+//            String insertSql = "INSERT INTO Movement_Reg (m_status, a_status, date_time) VALUES "
+//                    + "('" + value + "','', '" + currentTimestamp + "')";
+
+            String update = "UPDATE Movement_Reg SET m_status = 'off',a_status = 'off', date_time = '" + currentTimestamp + "' WHERE reg_id = 6";
+
+            String sqlQuery = "UPDATE Movement_Reg SET a_status = '" + value + "', date_time = '" + currentTimestamp + "' "
+                    + "WHERE reg_id = 1";
+
+            System.out.println(">>" + update);
+            if (statement.executeUpdate(update) > 0) {
+                System.out.println("Insert........");
                 statement.close();
                 return true;
             }
@@ -94,15 +121,16 @@ public class AzureCloudConnection {
         }
     }
 
-    private static void showData(Connection connection) throws SQLException {
-        String query = "SELECT * FROM Movement_Reg";
+    private static void showData(Connection connection, int count) throws SQLException {
+        String query = "SELECT * FROM Movement_Reg where reg_id = 6";
         try (Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(query);
             while (resultSet.next()) {
-                System.out.println("resultSet.getString(1) :" + resultSet.getString(1));
-                System.out.println("resultSet.getString(2) :" + resultSet.getString(2));
-                System.out.println("resultSet.getString(3) :" + resultSet.getString(3));
-                System.out.println("resultSet.getString(3) :" + resultSet.getString(4));
+                System.out.println("------------------------- Count :" + count + " -------------------------");
+                System.out.println("Id :" + resultSet.getString(1));
+                System.out.println("m_status :" + resultSet.getString(2));
+                System.out.println("a_status :" + resultSet.getString(3));
+                System.out.println("datetime :" + resultSet.getString(4));
             }
             statement.close();
         }
